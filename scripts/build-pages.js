@@ -20,15 +20,16 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const DOCS = path.join(ROOT, 'docs');
 
-function require(dir, label) {
-  if (!fs.existsSync(dir)) {
-    console.error(`✗ Missing ${label} at ${path.relative(ROOT, dir)} — run \`npm run index\` first.`);
+function requirePath(p, label) {
+  if (!fs.existsSync(p)) {
+    console.error(`✗ Missing ${label} at ${path.relative(ROOT, p)} — run \`npm run index\` first.`);
     process.exit(1);
   }
 }
 
-require(path.join(ROOT, 'data', 'index.json'), 'data/index.json');
-require(path.join(ROOT, 'thumbs'), 'thumbs/');
+requirePath(path.join(ROOT, 'data', 'index.json'), 'data/index.json');
+requirePath(path.join(ROOT, 'thumbs'), 'thumbs/');
+requirePath(path.join(ROOT, 'mids'), 'mids/');
 
 // Wipe and recreate docs/
 fs.rmSync(DOCS, { recursive: true, force: true });
@@ -42,6 +43,9 @@ fs.cpSync(path.join(ROOT, 'data'), path.join(DOCS, 'data'), { recursive: true })
 
 // thumbs/ → docs/thumbs/
 fs.cpSync(path.join(ROOT, 'thumbs'), path.join(DOCS, 'thumbs'), { recursive: true });
+
+// mids/ → docs/mids/
+fs.cpSync(path.join(ROOT, 'mids'), path.join(DOCS, 'mids'), { recursive: true });
 
 // 404.html — redirect SPA fallback
 const notFound = `<!doctype html>
@@ -61,8 +65,10 @@ fs.writeFileSync(path.join(DOCS, '404.html'), notFound);
 // Report
 const thumbCount = fs.readdirSync(path.join(DOCS, 'thumbs'), { recursive: true })
   .filter((f) => f.endsWith('.webp')).length;
+const midCount = fs.readdirSync(path.join(DOCS, 'mids'), { recursive: true })
+  .filter((f) => f.endsWith('.webp')).length;
 const docsSize = du(DOCS);
-console.log(`✓ docs/ built — ${thumbCount} thumbnails, ~${(docsSize / 1024 / 1024).toFixed(1)} MB`);
+console.log(`✓ docs/ built — ${thumbCount} thumbs + ${midCount} mids, ~${(docsSize / 1024 / 1024).toFixed(1)} MB total`);
 
 function du(dir) {
   let total = 0;

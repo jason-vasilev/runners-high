@@ -11,11 +11,11 @@ const lightboxPrev = $("#lightbox-prev");
 const lightboxNext = $("#lightbox-next");
 const lightboxDownload = $("#lightbox-download");
 
-// Build URLs: thumbnails for the grid and lightbox (originals not shipped with the demo).
+// Build URLs: small thumbnails for the grid, medium WebP for the lightbox.
 const thumbUrl = (image) =>
   `thumbs/${encodeURI(image.replace(/\.[^./]+$/, ".webp"))}`;
 const fullUrl = (image) =>
-  `thumbs/${encodeURI(image.replace(/\.[^./]+$/, ".webp"))}`;
+  `mids/${encodeURI(image.replace(/\.[^./]+$/, ".webp"))}`;
 const fileNameFromPath = (image) => image.split("/").pop();
 
 let mini = null;

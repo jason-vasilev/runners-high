@@ -5,8 +5,9 @@ models/*.onnx
 models/*.weights
 eng.traineddata
 
-# Root-level generated thumbnails (docs/thumbs/ is committed for GitHub Pages)
+# Root-level generated assets (docs/thumbs/ and docs/mids/ are committed for GitHub Pages)
 /thumbs/
+/mids/
 
 # Debug crops from --debug-crops
 debug/

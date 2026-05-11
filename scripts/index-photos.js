@@ -20,11 +20,14 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const ROOT = path.join(__dirname, '..');
 const PHOTOS_DIR = path.join(ROOT, 'photos');
 const THUMBS_DIR = path.join(ROOT, 'thumbs');
+const MIDS_DIR   = path.join(ROOT, 'mids');
 const DATA_DIR = path.join(ROOT, 'data');
 const INDEX_PATH = path.join(DATA_DIR, 'index.json');
 const MODEL_PATH = path.join(ROOT, 'models', 'bib-detector.onnx');
-const THUMB_WIDTH = 600; // wide enough for retina grid cards (~300 css px)
+const THUMB_WIDTH = 600;  // grid cards (~300 css px @2x)
 const THUMB_QUALITY = 75;
+const MID_WIDTH   = 1800; // lightbox — sharp on any laptop/desktop viewport
+const MID_QUALITY = 82;
 
 const args = parseArgs(process.argv.slice(2));
 const VERBOSE = args.verbose;
@@ -333,29 +336,37 @@ function relImagePath(absPath) {
   return path.relative(PHOTOS_DIR, absPath).split(path.sep).join('/');
 }
 
-function thumbAbsPath(rel) {
-  // Replace extension with .webp; keep folder structure mirroring photos/.
-  const webp = rel.replace(/\.[^./]+$/, '.webp');
-  return path.join(THUMBS_DIR, webp);
+function webpRel(rel) {
+  return rel.replace(/\.[^./]+$/, '.webp');
 }
 
-/**
- * Generate a small WebP thumbnail for the image if one is missing or stale.
- * Returns true if a new thumbnail was written, false if skipped.
- */
-async function ensureThumbnail(absPath, rel, srcMtime) {
-  const thumb = thumbAbsPath(rel);
-  if (fs.existsSync(thumb)) {
-    const thumbMtime = fs.statSync(thumb).mtimeMs;
-    if (thumbMtime >= srcMtime) return false; // up to date
+function thumbAbsPath(rel) {
+  return path.join(THUMBS_DIR, webpRel(rel));
+}
+
+function midAbsPath(rel) {
+  return path.join(MIDS_DIR, webpRel(rel));
+}
+
+async function ensureResized(absPath, dest, width, quality, srcMtime) {
+  if (fs.existsSync(dest)) {
+    if (fs.statSync(dest).mtimeMs >= srcMtime) return false; // up to date
   }
-  fs.mkdirSync(path.dirname(thumb), { recursive: true });
+  fs.mkdirSync(path.dirname(dest), { recursive: true });
   await sharp(absPath)
-    .rotate() // honour EXIF orientation so portrait photos aren't sideways
-    .resize({ width: THUMB_WIDTH, withoutEnlargement: true })
-    .webp({ quality: THUMB_QUALITY })
-    .toFile(thumb);
+    .rotate() // honour EXIF orientation
+    .resize({ width, withoutEnlargement: true })
+    .webp({ quality })
+    .toFile(dest);
   return true;
+}
+
+async function ensureThumbnail(absPath, rel, srcMtime) {
+  return ensureResized(absPath, thumbAbsPath(rel), THUMB_WIDTH, THUMB_QUALITY, srcMtime);
+}
+
+async function ensureMid(absPath, rel, srcMtime) {
+  return ensureResized(absPath, midAbsPath(rel), MID_WIDTH, MID_QUALITY, srcMtime);
 }
 
 // ───── Main ────────────────────────────────────────────────────────────────
@@ -455,18 +466,24 @@ async function main() {
   let processed = 0;
   let skipped = 0;
   let thumbsBuilt = 0;
+  let midsBuilt = 0;
   for (const file of files) {
     const rel = relImagePath(file);
     const prior = existing.get(rel);
     const mtime = fs.statSync(file).mtimeMs;
 
-    // Always make sure a thumbnail exists (cheap, idempotent). Decoupled
-    // from OCR so re-running after a code change rebuilds missing thumbs
-    // without re-OCRing every image.
+    // Always ensure both sizes exist (cheap, idempotent). Decoupled from OCR
+    // so re-running after a code change rebuilds missing assets without
+    // re-OCRing every image.
     try {
       if (await ensureThumbnail(file, rel, mtime)) thumbsBuilt++;
     } catch (err) {
       log(`   ✗ thumbnail failed for ${rel}: ${err.message}`);
+    }
+    try {
+      if (await ensureMid(file, rel, mtime)) midsBuilt++;
+    } catch (err) {
+      log(`   ✗ mid failed for ${rel}: ${err.message}`);
     }
 
     if (!FORCE && prior && prior.mtime === mtime) {
@@ -500,7 +517,7 @@ async function main() {
   index.images = [...existing.values()].filter((r) => foundRels.has(r.image));
   saveIndex(index);
   const pruneNote = pruned ? `, ${pruned} stale entr${pruned === 1 ? 'y' : 'ies'} removed` : '';
-  log(`\nDone. ${processed} processed, ${skipped} skipped, ${thumbsBuilt} thumbnail${thumbsBuilt === 1 ? '' : 's'} built${pruneNote}. Index → ${path.relative(ROOT, INDEX_PATH)}`);
+  log(`\nDone. ${processed} processed, ${skipped} skipped, ${thumbsBuilt} thumb${thumbsBuilt === 1 ? '' : 's'} + ${midsBuilt} mid${midsBuilt === 1 ? '' : 's'} built${pruneNote}. Index → ${path.relative(ROOT, INDEX_PATH)}`);
   await terminateWorkers();
 }
 

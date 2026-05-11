@@ -25,7 +25,8 @@ const MIME = {
 const ROOTS = {
   "/photos/": path.join(__dirname, "photos"),
   "/thumbs/": path.join(__dirname, "thumbs"),
-  "/data/": path.join(__dirname, "data"),
+  "/mids/":   path.join(__dirname, "mids"),
+  "/data/":   path.join(__dirname, "data"),
 };
 const PUBLIC_ROOT = path.join(__dirname, "public");
 
