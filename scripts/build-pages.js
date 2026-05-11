@@ -30,6 +30,7 @@ function requirePath(p, label) {
 requirePath(path.join(ROOT, 'data', 'index.json'), 'data/index.json');
 requirePath(path.join(ROOT, 'thumbs'), 'thumbs/');
 requirePath(path.join(ROOT, 'mids'), 'mids/');
+requirePath(path.join(ROOT, 'public', 'lib'), 'public/lib/');
 
 // Wipe and recreate docs/
 fs.rmSync(DOCS, { recursive: true, force: true });

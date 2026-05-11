@@ -1,4 +1,4 @@
-import MiniSearch from "https://cdn.jsdelivr.net/npm/minisearch@7.1.0/+esm";
+import MiniSearch from "./lib/minisearch/index.js";
 
 const $ = (sel) => document.querySelector(sel);
 const status = $("#status");
@@ -76,28 +76,35 @@ function renderResults(items) {
     const card = document.createElement("button");
     card.className = "card";
     card.type = "button";
-    card.innerHTML = `
-      <img loading="lazy" src="${thumbUrl(item.image)}" alt="" />
-      <div class="meta">
-        ${item.number ? `<span class="num">#${escapeHtml(item.number)}</span>` : ""}
-        ${item.name ? `<span class="name">${escapeHtml(item.name)}</span>` : ""}
-      </div>
-    `;
+
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.src = thumbUrl(item.image); // property assignment — safe, never parsed as HTML
+    img.alt = "";
+
+    const meta = document.createElement("div");
+    meta.className = "meta";
+    if (item.number) {
+      const num = document.createElement("span");
+      num.className = "num";
+      num.textContent = `#${item.number}`; // textContent — never parsed as HTML
+      meta.appendChild(num);
+    }
+    if (item.name) {
+      const name = document.createElement("span");
+      name.className = "name";
+      name.textContent = item.name;
+      meta.appendChild(name);
+    }
+
+    card.appendChild(img);
+    card.appendChild(meta);
     card.addEventListener("click", () => openLightbox(idx));
     frag.appendChild(card);
   });
   resultsEl.appendChild(frag);
 }
 
-function escapeHtml(s) {
-  return String(s).replace(
-    /[&<>"']/g,
-    (c) =>
-      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[
-        c
-      ],
-  );
-}
 
 function showLightboxItem(index) {
   if (!currentResults.length) return;

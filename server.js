@@ -33,7 +33,8 @@ const PUBLIC_ROOT = path.join(__dirname, "public");
 function resolveSafe(root, urlPath, prefix) {
   const rel = decodeURIComponent(urlPath.slice(prefix.length));
   const full = path.normalize(path.join(root, rel));
-  if (!full.startsWith(root)) return null; // path traversal guard
+  // Require trailing sep so "/photos-backup/…".startsWith("/photos") doesn't pass.
+  if (!full.startsWith(root + path.sep) && full !== root) return null;
   return full;
 }
 
