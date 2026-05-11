@@ -446,6 +446,8 @@ async function main() {
 
   const index = loadIndex();
   const existing = new Map(index.images.map((r) => [r.image, r]));
+  // Track which relative paths were found in this walk so we can prune stale entries.
+  const foundRels = new Set(files.map((f) => relImagePath(f)));
 
   await ensureWorkers();
   log(`Indexing ${files.length} image(s)…`);
@@ -488,14 +490,17 @@ async function main() {
 
     if (processed > 0 && processed % 10 === 0) {
       // Persist progress periodically so a crash doesn't lose all work.
-      index.images = [...existing.values()];
+      index.images = [...existing.values()].filter((r) => foundRels.has(r.image));
       saveIndex(index);
     }
   }
 
-  index.images = [...existing.values()];
+  // Only keep entries for images that still exist on disk.
+  const pruned = index.images.filter((r) => !foundRels.has(r.image)).length;
+  index.images = [...existing.values()].filter((r) => foundRels.has(r.image));
   saveIndex(index);
-  log(`\nDone. ${processed} processed, ${skipped} skipped, ${thumbsBuilt} thumbnail${thumbsBuilt === 1 ? '' : 's'} built. Index → ${path.relative(ROOT, INDEX_PATH)}`);
+  const pruneNote = pruned ? `, ${pruned} stale entr${pruned === 1 ? 'y' : 'ies'} removed` : '';
+  log(`\nDone. ${processed} processed, ${skipped} skipped, ${thumbsBuilt} thumbnail${thumbsBuilt === 1 ? '' : 's'} built${pruneNote}. Index → ${path.relative(ROOT, INDEX_PATH)}`);
   await terminateWorkers();
 }
 
