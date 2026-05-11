@@ -1,0 +1,22 @@
+{
+  "name": "runners-high",
+  "version": "0.1.0",
+  "description": "Find yourself in marathon photos by bib number or name.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "setup": "node scripts/download-model.js",
+    "index": "node scripts/index-photos.js",
+    "build:pages": "node scripts/build-pages.js",
+    "dev": "node server.js",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "onnxruntime-node": "^1.19.2",
+    "sharp": "^0.33.5",
+    "tesseract.js": "^5.1.1"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

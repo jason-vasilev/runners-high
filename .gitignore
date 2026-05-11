@@ -1,0 +1,29 @@
+node_modules/
+
+# Generated and large files — not needed for the static demo
+models/*.onnx
+models/*.weights
+eng.traineddata
+
+# Root-level generated thumbnails (docs/thumbs/ is committed for GitHub Pages)
+/thumbs/
+
+# Debug crops from --debug-crops
+debug/
+
+# Photo libraries — originals stay local only
+photos/**/*.jpg
+photos/**/*.jpeg
+photos/**/*.png
+photos/**/*.JPG
+photos/**/*.JPEG
+photos/**/*.PNG
+photos/**/*.heic
+photos/**/*.HEIC
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Optional cache
+.cache/

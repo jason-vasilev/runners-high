@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Runner's High — Find your race photos</title>
+    <base href="/runners-high/" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <header class="hero">
+      <h1>Runner's <span class="accent">High</span></h1>
+      <p class="tagline">
+        Find yourself in the crowd. Type your bib number or your name.
+      </p>
+      <div class="search-wrap">
+        <input
+          id="search"
+          type="search"
+          autofocus
+          autocomplete="off"
+          spellcheck="false"
+          placeholder="e.g. 1284 or Smith"
+          aria-label="Search by bib number or name"
+        />
+      </div>
+      <p id="status" class="status" aria-live="polite"></p>
+    </header>
+
+    <main id="results" class="results"></main>
+
+    <div id="lightbox" class="lightbox" hidden>
+      <button class="lightbox-close" aria-label="Close (Esc)">×</button>
+      <a
+        id="lightbox-download"
+        class="lightbox-download"
+        href="#"
+        download
+        aria-label="Download original photo"
+      >
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="2.2"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          aria-hidden="true"
+        >
+          <path d="M12 3v12m0 0l-4-4m4 4l4-4M5 21h14" />
+        </svg>
+        <span>Download</span>
+      </a>
+      <button
+        id="lightbox-prev"
+        class="lightbox-nav lightbox-prev"
+        aria-label="Previous photo (←)"
+      >
+        ‹
+      </button>
+      <button
+        id="lightbox-next"
+        class="lightbox-nav lightbox-next"
+        aria-label="Next photo (→)"
+      >
+        ›
+      </button>
+      <img id="lightbox-img" alt="" />
+      <div id="lightbox-caption" class="lightbox-caption"></div>
+    </div>
+
+    <script type="module" src="app.js"></script>
+  </body>
+</html>
