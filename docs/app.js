@@ -4,6 +4,7 @@ const $ = (sel) => document.querySelector(sel);
 const status = $("#status");
 const resultsEl = $("#results");
 const searchEl = $("#search");
+const searchClear = $("#search-clear");
 const lightbox = $("#lightbox");
 const lightboxImg = $("#lightbox-img");
 const lightboxCap = $("#lightbox-caption");
@@ -250,10 +251,18 @@ async function init() {
   mini.addAll(docs);
 
   runSearch("");
-  searchEl.addEventListener(
-    "input",
-    debounce((e) => runSearch(e.target.value), 80),
-  );
+  searchEl.addEventListener("input", debounce((e) => {
+    const val = e.target.value;
+    searchClear.hidden = !val;
+    runSearch(val);
+  }, 80));
+
+  searchClear.addEventListener("click", () => {
+    searchEl.value = "";
+    searchClear.hidden = true;
+    searchEl.focus();
+    runSearch("");
+  });
 }
 
 init();
