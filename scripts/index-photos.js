@@ -28,6 +28,11 @@ const THUMB_WIDTH = 600;  // grid cards (~300 css px @2x)
 const THUMB_QUALITY = 75;
 const MID_WIDTH   = 1800; // lightbox — sharp on any laptop/desktop viewport
 const MID_QUALITY = 82;
+// Torso crop fractions (relative to the person bounding-box height).
+// Bibs sit on the chest — skip the head at the top and the legs at the bottom.
+// Tune these if your event photos are shot from an unusual angle.
+const TORSO_TOP_FRAC = 0.15; // skip top 15 % (head + neck)
+const TORSO_BOT_FRAC = 0.68; // cut off below 68 % (waist / legs)
 
 const args = parseArgs(process.argv.slice(2));
 const VERBOSE = args.verbose;
@@ -235,6 +240,30 @@ function expandBox(b, padFrac, imgW, imgH) {
   return clampBox({ x: b.x - px, y: b.y - py, w: b.w + 2 * px, h: b.h + 2 * py }, imgW, imgH);
 }
 
+/**
+ * Crop a detected person box down to the chest/torso band where bibs sit.
+ * Returns a raw (unclamped) box; call clampBox() before use.
+ *
+ * - Horizontal: keep full person width + a small outward pad so bibs near
+ *   the body edge aren't clipped.
+ * - Vertical: skip the head (top TORSO_TOP_FRAC) and legs (below TORSO_BOT_FRAC).
+ *
+ * Falls back to the full person box if the resulting height is too small for OCR.
+ */
+function torsoCrop(p, imgW, imgH) {
+  const cropY = p.y + p.h * TORSO_TOP_FRAC;
+  const cropH = p.h * (TORSO_BOT_FRAC - TORSO_TOP_FRAC);
+  const padX  = p.w * 0.06; // small horizontal outward expansion
+  const raw = { x: p.x - padX, y: cropY, w: p.w + padX * 2, h: cropH };
+  const clamped = clampBox(raw, imgW, imgH);
+  // If the torso slice is too thin (very short person detection or unusual
+  // angle), fall back to the whole person box with the standard 5 % pad.
+  if (clamped.h < 120 || clamped.w < 80) {
+    return { box: expandBox(p, 0.05, imgW, imgH), isFallback: true };
+  }
+  return { box: clamped, isFallback: false };
+}
+
 let cropCounter = 0;
 
 function extractBibsFromText(text) {
@@ -409,7 +438,9 @@ async function processImage(absPath) {
     vlog(`  ${people.length} detected, ${persons.length} kept after filtering.`);
 
     for (const p of persons) {
-      const region = expandBox(p, 0.05, imgW, imgH);
+      const { box: region, isFallback } = torsoCrop(p, imgW, imgH);
+      if (isFallback) vlog(`    torso crop too small — using full person box`);
+      else vlog(`    torso crop ${region.w}×${region.h} (person was ${Math.floor(p.w)}×${Math.floor(p.h)})`);
       const res = await ocrRegion(buffer, region, imgW, imgH, debugName);
       const cropNumbers = new Set(res.numbers);
       const cropNames = new Set(res.names.map((n) => n.toUpperCase()));
